@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <armadillo>
+#include "arma_func_example.h"
 
 // shortening the names vec instead of arma::vec
 using namespace std;
@@ -17,24 +18,29 @@ void create_deck(int n_players) {
     // initialise deck
     int n_single_decks = n_players / 4 + 1;
     int n_jokers = 3;
+    // number of cards in deck (default 55)
     int n_cards = n_single_decks * (n_jokers + 13 * 4);
-    imat deck(n_cards , 2);
+    imat deck = zeros<imat>(n_cards , 2);
 
     for (int single_deck_num=1; single_deck_num <= n_single_decks; single_deck_num++) {
-        // add jokers
         int first_card = (single_deck_num -1) * n_cards / n_single_decks; 
         int last_card = single_deck_num * (n_cards -1) / n_single_decks;
-
-        deck.rows(first_card, first_card 1) = vec({0,13});
-        //deck.rows(first_card, first_card + n_jokers - 1).each_row() = rowvec({0,13});
-        for (int suite=1; suite <= 4; suite++) {
-            //vec s = suite * (ones<vec>(13));
-            vec s(13);  s.fill(suite);
-            vec v = linspace<vec>(0,12, 13);
-
-            mat deck_part = join_rows(s,v);
-            //deck.rows(first_card +  n_jokers, last_card) = deck_part;    
+	for (int i = first_card; i <= last_card; i++) {
+	    for (int j = 0; j < n_jokers; j++) {
+     	        // add jokers (default 3 per 52 cards)
+                deck.row(i) = irowvec({0,13});
+		i++;
+		}    
+            for (int suite=1; suite <= 4; suite++) {
+		// add suite (4 different suites 0-3)
+		for (int value=0; value < 13; value++) {
+		    // add all values of same suite (13)
+		    deck.row(i) = irowvec({suite, value});
+			i++;
+		    }
             }
+	    }
+ 
         };
             deck.print(" Matrix");
 
@@ -143,6 +149,15 @@ GAME_MODE = "onehuman"
 */
 
 create_deck(1);
+
+imat A = zeros<imat>(10,2);
+imat a = ones<imat>(5,2);
+
+int x = 3;
+A.print("Hand before Manipulation");
+A = manip_hands(A,a, x);
+
+A.print("Hand after Manipulation");
 
 return 0;
 }
