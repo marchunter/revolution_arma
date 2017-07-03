@@ -11,10 +11,11 @@ using namespace std;
 using namespace arma;
 
 mat manip_hands(mat A, mat a, int x){
-    // add vec between row x in A;
+    // add smaller mat between row x in mat A;
+    // from indices x to x + (rows of a)
     int j;
 
-    for(int i = x; i <= a.n_rows; i++){
+    for(int i = x; i < x + a.n_rows; i++){
         A.row(i) = a.row(j);    
         j++;
     }
