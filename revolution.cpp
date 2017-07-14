@@ -175,8 +175,8 @@ int x = 3;
 x = move_card_from_to(&Deck, &Discard, x);
 
 
-Deck.print("Deck after Manipulation");
-Discard.print("Discard after Manipulation");
+Deck.t().print("Deck after Manipulation");
+Discard.t().print("Discard after Manipulation");
 
 return 0;
 }
