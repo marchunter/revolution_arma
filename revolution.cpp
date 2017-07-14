@@ -6,6 +6,8 @@
 #include <iostream>
 #include <armadillo>
 #include "arma_func_example.h"
+#include "init.h"
+#include "cards.h"
 
 // shortening the names vec instead of arma::vec
 using namespace std;
@@ -13,6 +15,7 @@ using namespace arma;
 
 //### Helper Functions ### 
 
+/* TO BE REMOVED
 
 void create_deck(int n_players) {
     // initialise deck
@@ -45,6 +48,8 @@ void create_deck(int n_players) {
             deck.print(" Matrix");
 
 }
+*/
+
 
 /*
 # initiate Match
@@ -148,16 +153,30 @@ N_PLAYERS = 4
 GAME_MODE = "onehuman"
 */
 
-create_deck(1);
+//imat A = zeros<imat>(10,2);
+//imat a = ones<imat>(5,2);
 
-imat A = zeros<imat>(10,2);
-imat a = ones<imat>(5,2);
+ivec Deck = init_deck();
+Deck.t().print("initialised Deck:");
+ivec Discard = init_discard();
+Discard.t().print("initialised Discard:");
 
+
+
+
+// Testing ground 
+Deck.print("Test. Deck before Manipulation");
+
+ivec a = zeros<ivec>(7);
 int x = 3;
-A.print("Hand before Manipulation");
-A = manip_hands(A,a, x);
 
-A.print("Hand after Manipulation");
+//Deck = add_card(Deck, x);
+//Deck = remove_card(Deck, x);
+x = move_card_from_to(&Deck, &Discard, x);
+
+
+Deck.print("Deck after Manipulation");
+Discard.print("Discard after Manipulation");
 
 return 0;
 }
