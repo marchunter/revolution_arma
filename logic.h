@@ -38,7 +38,7 @@ int is_same_suite(int index, int compare_idx){
 
     // jokers have no suite and are treated as if they had all suites.
     if (index >= 52) return 1;
-    else if (index % 4 = compare_idx % 4) return 1;
+    else if (index % 4 == compare_idx % 4) return 1;
     else return 0; 
 }
 
@@ -46,5 +46,7 @@ imat check_singles(){
     // TODO
 }
 
-imat check_doubles()
+imat check_doubles() {
+    //  TODO
+}
 

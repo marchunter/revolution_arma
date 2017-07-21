@@ -5,48 +5,56 @@
 
 #include <iostream>
 #include <armadillo>
+#include <random>
 
 // shortening the names vec instead of arma::vec
 using namespace std;
 using namespace arma;
 
-ivec init_deck(){
-    // initialise deck as a vector of cards
-    // in the beginning all cards are present (all entries = 1),
-    // as soon as a card leaves the deck, the entry will become
-    // zero.
+#define DECKSIZE 55
+
+imat init_state(int n_players, int decksize){
+    // Initialise state of the game as a matrix
+    // Each row contains elements each of which
+    // represent a card
     // They are ordered by value; among the same values
     // diamond < hearts < spades < clubs
     // The last entries represent jokers (3)
     // Total size of array = 13 values * 4 suites + 3 jokers = 55.
-    ivec Deck = ones<ivec>(55);
 
-    return Deck;
+    // First row:   Deck (initialised to all ones)
+    // Second row:  Discard
+    // Third row:   Top cards on table
+    // Fourth row:  Cards under top cards on table
+    // Fifth to 5+xth row:  Each row represents a hand of a 
+    //                      player with x players
+
+    // Takes number of players as input
+    // Returns initial state matrix
+
+    imat state(4 + n_players, decksize);
+    state.zeros();
+    state.row(0).fill(1); // = ones<irowvec>(DECKSIZE);
+
+    return state;
 }
 
 
-ivec init_discard(){
-    // initialise deck as a vector of cards
-    // in the beginning all cards are present (all entries = 1),
-    // as soon as a card leaves the deck, the entry will become
-    // zero.
-    // They are ordered by value; among the same values
-    // diamond < hearts < spades < clubs
-    // The last entries represent jokers (3)
-    // Total size of array = 13 values * 4 suites + 3 jokers = 55.
-    ivec Discard = zeros<ivec>(55);
+ivec shuffle_deck() {
+    arma_rng::set_seed_random();
+    ivec indices = linspace<ivec>(0, DECKSIZE -1, DECKSIZE);
+    ivec deck_shuffled_idx = shuffle(indices);
 
-    return Discard;
-}    
-
-
-ivec init_hand(){
-	// TODO
-
-	ivec Hand = zeros<ivec>(55);
- 
-
-	return Hand;
+    return deck_shuffled_idx;
 }
+
+
+ivec init_hand() {
+
+    ivec Hand = zeros<ivec>(DECKSIZE);
+
+    return Hand;
+}
+
 
 

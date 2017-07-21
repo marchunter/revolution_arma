@@ -8,6 +8,8 @@
 #include "arma_func_example.h"
 #include "init.h"
 #include "cards.h"
+#include "logic.h"
+#include <list>
 
 // shortening the names vec instead of arma::vec
 using namespace std;
@@ -146,6 +148,7 @@ void create_deck(int n_players) {
 
 
 int main(int argc, char *argv[]) {
+//    srand(time(NULL));
 // input GLOBALS
 /*
 N_GAMES = 10
@@ -156,27 +159,30 @@ GAME_MODE = "onehuman"
 //imat A = zeros<imat>(10,2);
 //imat a = ones<imat>(5,2);
 
-ivec Deck = init_deck();
-Deck.t().print("initialised Deck:");
-ivec Discard = init_discard();
-Discard.t().print("initialised Discard:");
+imat state = init_state(4, DECKSIZE);
+
+state.print("initialised state of game:");
+/*
+
+// Deal Hands
+
+ivec indices = shuffle_deck();
+
+deal_hands(indices, state, 4);
 
 
+state.print("state of game after dealing Hands:");
+
+*/
 
 
 // Testing ground 
-Deck.print("Test. Deck before Manipulation");
-
-ivec a = zeros<ivec>(7);
-int x = 3;
-
-//Deck = add_card(Deck, x);
-//Deck = remove_card(Deck, x);
-x = move_card_from_to(&Deck, &Discard, x);
 
 
-Deck.t().print("Deck after Manipulation");
-Discard.t().print("Discard after Manipulation");
+
+add_card(&state, 4, 2);
+state.print("state of game, card 2 added to row 4:");
+
 
 return 0;
 }
