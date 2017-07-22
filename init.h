@@ -11,7 +11,6 @@
 using namespace std;
 using namespace arma;
 
-#define DECKSIZE 55
 
 imat init_state(int n_players, int decksize){
     // Initialise state of the game as a matrix
@@ -40,21 +39,14 @@ imat init_state(int n_players, int decksize){
 }
 
 
-ivec shuffle_deck() {
+ivec shuffle_deck(int decksize) {
+    // Takes the deck size as input.
+    // Returns a vector of indices from 0 to deck size in random order.
     arma_rng::set_seed_random();
-    ivec indices = linspace<ivec>(0, DECKSIZE -1, DECKSIZE);
+    ivec indices = linspace<ivec>(0, decksize -1, decksize);
     ivec deck_shuffled_idx = shuffle(indices);
 
     return deck_shuffled_idx;
 }
-
-
-ivec init_hand() {
-
-    ivec Hand = zeros<ivec>(DECKSIZE);
-
-    return Hand;
-}
-
 
 

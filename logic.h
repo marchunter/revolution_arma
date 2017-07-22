@@ -42,6 +42,22 @@ int is_same_suite(int index, int compare_idx){
     else return 0; 
 }
 
+bool validate_move(imat State, ivec move, int player_number){
+    // Takes a game state as input, which contains the player's hand,
+    // and the top cards.
+    // The player's id is also given.
+    // Takes an ivec with the length of the decksize as input. Zeros mean,
+    // the cards are not played, while ones mean, that those cards are
+    // played-
+    // Returns a boolean, whether or not the move is valid
+
+    // Check if cards are in hand:
+
+
+
+    // Check if cards can be played on top
+}
+
 imat check_singles(){
     // TODO
 }

@@ -6,8 +6,6 @@
 #include <iostream>
 #include <armadillo>
 
-#define DECKSIZE 55
-
 // shortening the names vec instead of arma::vec
 using namespace std;
 using namespace arma;
@@ -53,11 +51,12 @@ imat move_card_from_to(imat State, int from_row, int to_row, int index) {
 
 
 imat deal_hands(ivec deck_shuffled_idx, imat State, int n_players) {
-    // Takes the Deck and a Hand as well as the current player ID
-    // and the total number of players as input and
-    // Returns the player ID
+    // Takes indices of a shuffled deck, a game state
+    // and the total number of players as input.
+    // Returns the updated game state where the hands of all
+    // players have been dealt.
 
-    int n_cards_p_hand = DECKSIZE / n_players;
+    int n_cards_p_hand = State.n_cols / n_players;
 
 
     for (int player_number = 0; player_number < n_players; player_number++){
@@ -66,8 +65,10 @@ imat deal_hands(ivec deck_shuffled_idx, imat State, int n_players) {
             i <= (n_cards_p_hand * ( 1 + player_number)) - 1; i++) {
             int index = deck_shuffled_idx[i];
             printf("move card INDEX: %d \n", index);
-            State = move_card_from_to(State, 0, 4 + player_number, index);
+            State = move_card_from_to(State, 0, 4 + player_number, index);      
         }   
     }
     return State;
 }
+
+
