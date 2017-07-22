@@ -162,27 +162,34 @@ GAME_MODE = "onehuman"
 imat state = init_state(4, DECKSIZE);
 
 state.print("initialised state of game:");
-/*
+
 
 // Deal Hands
 
 ivec indices = shuffle_deck();
 
-deal_hands(indices, state, 4);
+state = deal_hands(indices, state, 4);
 
 
 state.print("state of game after dealing Hands:");
 
-*/
+
 
 
 // Testing ground 
 
 
-
-add_card(&state, 4, 2);
+/*
+state = add_card(state, 4, 2);
 state.print("state of game, card 2 added to row 4:");
 
+
+state = move_card_from_to(state, 0, 1, 5);
+state.print("state of game, card 5 moved from 0 to 1:");
+
+state = deal_hands(indices, state, 4);
+state.print("state of game, after dealing all hands");
+*/
 
 return 0;
 }
