@@ -159,6 +159,7 @@ struct Game
     int top_player = 0;
     int starting_player = 0;
     bool is_suite_lock = false;
+    bool is_straight = false;
     // game history, not implemented
 
 } Current_game;
@@ -266,16 +267,34 @@ if (Current_match.n_games_played > 0){
         for (int i=0; i < move_idx.size(); i++){
             move(move_idx(i)) = 1;
         }
-        move.raw_print("selected unvalidated move");
+        move.t().raw_print("selected unvalidated move");
 
         // Validate move
+        //int is_same_value = are_all_same_value(move);
+
+        //int is_same_suite = are_all_same_suite(move);
+
+        //printf("n cards: %d, same value?: %d, same suite?: %d\n", 
+        //    sum(move), is_same_value, is_same_suite);
 
 
+    // TESTING move, state, top_cards, ...
+        
+    ivec same_move = move;
+    ivec other_move = move;
+    move(1) = 1;
+
+    other_move(0) = 1;
+    other_move.t().print("other move for comparison, testing:");
+    int is_suite_matching = do_suites_match(move, other_move);
+    printf("suites are matching?: %d\n", is_suite_matching);
+
+    validate_move(state, move, Current_game, 0)
+
+        is_valid = true;
     } while (is_valid == false);
 
     // Choose move
-
-    
 
 
     // update Player
