@@ -9,7 +9,7 @@
 #include "init.h"
 #include "cards.h"
 #include "logic.h"
-
+#include "human.h"
 // shortening the names vec instead of arma::vec
 using namespace std;
 using namespace arma;
@@ -152,6 +152,7 @@ Current_match.ranking_history.print("initialised Ranking History: ");
 // repeat until total number of games is reached
 
 // initiate Game //
+/*
 struct Game
 {
     bool is_revolution = false;
@@ -163,7 +164,7 @@ struct Game
     // game history, not implemented
 
 } Current_game;
-
+*/
 
 // initiate Players, Discard, Table, empty Hands
 imat state = init_state(Current_match.n_players, DECKSIZE);
@@ -279,17 +280,42 @@ if (Current_match.n_games_played > 0){
 
 
     // TESTING move, state, top_cards, ...
-        
+
+
+
     ivec same_move = move;
-    ivec other_move = move;
-    move(1) = 1;
+    //ivec other_move = move;
+    //move(1) = 1;
+    //other_move(0) = 1;
+    //other_move.t().print("other move for comparison, testing:");
+    //int is_suite_matching = do_suites_match(move, other_move);
+    //printf("suites are matching?: %d\n", is_suite_matching);
+    
+    // manipulate state
+    //Current_game.is_straight = true;
+    Current_game.is_suite_lock = true;
+    state.row(4) = same_move.ones().t();
+    state(2,14) = 1;
+    state(2,12) = 1;
+    state(2,13) = 1;
 
-    other_move(0) = 1;
-    other_move.t().print("other move for comparison, testing:");
-    int is_suite_matching = do_suites_match(move, other_move);
-    printf("suites are matching?: %d\n", is_suite_matching);
+    move.zeros();
+    move(16) = 1;
+    move(17) = 1;
+    move(19) = 1;
+    //move(11) = 1;
 
-    validate_move(state, move, Current_game, 0)
+
+
+    print_state(state);
+
+    is_valid = validate_move(state, move, Current_game, 0);
+
+
+
+    printf("Current move: ");
+    print_state_row(move, DECKSIZE);
+    printf("is move valid?: %d\n", is_valid);
 
         is_valid = true;
     } while (is_valid == false);

@@ -132,13 +132,16 @@ int is_straight(ivec move){
     if ((n_cards_move >= 3) && 
             (are_all_same_suite(move) == 1)) {
         uvec indices = find(move == 1) / 4;
-        for (int i=indices(0); i<indices.n_elem; i++){
-            if (i != indices(i)) {return false;}
+        for (int i=0; i<indices.n_elem; i++){
+            if (indices(0) + i != indices(i)) {return false;}
         }
+        return true;
     }
+    else {return false;}
 }
 
-bool validate_move(imat State, ivec move, Game Current_game, int player_number){
+bool validate_move(imat State, ivec move, 
+    Game Current_game, int player_number){
     // Takes a game state as input, which contains the player's hand,
     // and the top cards.
     // The player's id and the Game struct are also given.
@@ -148,28 +151,32 @@ bool validate_move(imat State, ivec move, Game Current_game, int player_number){
     // Returns a boolean, whether or not the move is valid
     
     // Check if move is empty:
-
     int n_cards_move = sum(move);
     if (n_cards_move == 0) {return true;}
-    // Check if cards are in hand:
 
-    ivec Hand = State.row(player_number + 4);
+    // Check if cards are in hand:
+    ivec Hand = State.row(player_number + 4).t();
+    Hand.t().print("Hand:");
+    move.t().print("move:");
+
     ivec validation = Hand - move;
     int minimum = validation.min();
     if (minimum < 0){
-        printf("These cards are not in hand!");
+        printf("These cards are not in hand!\n");
         return false;
         }
 
     // Check if cards can be played on top
 
     // nothing on top?
-    ivec top_cards = State.row(2);
+    ivec top_cards = State.row(2).t();
     if (sum(top_cards) == 0) {
         // only one card?
-        if (n_cards_move == 1) {return true;}
+        if (n_cards_move == 1) {
+            return true;}
         // check for tuples
-        else if (are_all_same_value(move) == 1) {return true;}
+        else if (are_all_same_value(move) == 1) {
+            return true;}
         // check for straight
         else if (is_straight(move)) { 
             // Note. Here, the game state could be updated.
@@ -195,10 +202,12 @@ bool validate_move(imat State, ivec move, Game Current_game, int player_number){
             else {return false;}
         }
 
+        else {return false;}
+
         // is suite locked?
         if ((Current_game.is_suite_lock == true) 
             && (Current_game.is_straight == false)) {
-            if (do_suites_match(Hand, top_cards) == 1) {}
+            if (do_suites_match(move, top_cards) == 1) {}
             else {return false;}
             }
 
