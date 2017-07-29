@@ -18,6 +18,7 @@ struct Game
     int starting_player = 0;
     bool is_suite_lock = false;
     bool is_straight = false;
+
     // game history, not implemented
 
 } Current_game;
@@ -82,6 +83,9 @@ int is_same_suite(int index, int compare_idx){
 }
 
 int do_suites_match(ivec play1, ivec play2){
+    // Takes two vectors as input
+    // Checks wether all suites of the cards contained match
+    // Then it returns 1, and 0 otherwise.
 
     // Truncate jokers:
     ivec truncated_play1 = play1.rows(0, play1.n_elem - 3 -1);
@@ -211,9 +215,20 @@ bool validate_move(imat State, ivec move,
             else {return false;}
             }
 
-        // higher?
-        if (is_lowest_higher(move, top_cards) == 1) {return true;}
-        else {return false;}
+        // check for inverse condition!
+        bool is_inverse = (Current_game.is_jack != 
+            Current_game.is_revolution); 
+        printf("is inverse condition met? %d\n", is_inverse);
+
+        // higher (sometimes lower)?
+        if (is_inverse == false) {
+            if (is_lowest_higher(move, top_cards) == 1) {return true;}
+            else {return false;}    
+        }
+        else {
+            if (is_lowest_higher(top_cards, move) == 1) {return true;}
+            else {return false;}
+        }
 
         }
         

@@ -20,99 +20,6 @@ using namespace arma;
 #define DECKSIZE 55
 #define N_GAMES  10
 
-/*
-// initiate Match
-// define game mode
-// define number of players
-// define sequence of players
-// initiate Players
-// initiate empty Table
-// initiate empty Discard
-// repeat until total number of games is reached
-    // initiate Game //
-    // create deck with size according to the number of players
-    // shuffle deck
-    // distribute cards to hands of players, remaining cards are discarded (face-down)
-        // update Players
-        // update Discard
-    // Exchange of cards between players    
-    // sometimes, there is a choice left
-    // (small action required) // currently ignored
-        // first player and last player
-        // swap cards
-        // second player and second-to-last player
-        // swap cards
-        //    second_card, second_to_last_card)
-    // define starting player (first game random, otherwise last player begins)
-    ////// Start of turns //////
-    // repeat until game is over
-    // Check possible moves
-    // includes suite lock, doubles, triples, quadruples, revolution, straight
-        // split into same value pools
-        // calculate possible moves:
-        // 1) Single, Double, Triple, ...
-        // 2) Straights
-        // remove duplicates (cards with same suite and value)
-        // split into same suite pools
-        // find neighbouring values
-                        // calculate possible moves:
-                        // Straight
-        // unite moves
-        ////// INFO SECTION //////
-        // check which of the possible moves are allowed considering the table
-        // if table is not empty
-            // straight
-            // single, double, triple, ...
-            // number of cards on top
-            // check equality of suite with top cards if necessary
-            // check whether the possible moves have a higher value
-                // if greater than 0, then move is possible
-                    // -13 for only 3 can top joker, joker can go under 3
-            // append "Pass"
-    //// Action of players ////
-    // Action: Choose move or pass
-    // update Player
-        // remove cards from hand
-    // update Game
-    // update Table
-        // add top cards
-            // check suite lock condition
-            // check straight condition
-    ////// Special cards and revolution //////
-    // if revolution is played
-        // update Game
-    // if 10 is played:
-            // discard one card for every 10
-                // the last card can't be discarded
-            // Action: Choose card in Hand
-    //// End of Action ////
-    // if Jack is played:
-        // update Table
-    // if 8 is played:
-        // update Table
-        // update Game (starting player)
-                    // active player may play again
-    ////// Updating the game status //////
-    // check if Hand of one Player is empty
-        // repeat until all passed
-            // check if all passed including player with top cards
-            // empty the Table, player who played the last cards becomes active player
-                // update Table
-            // check now wether the player is already done
-            // next player's turn
-            // exclude finished players
-        // repeat until one Player is left
-    // end of game - update
-    // Game
-    // Match
-    // End of Game //
-    // repeat Game until total number of games is reached
-// End of Match //
-// Anounce ranking and winner
-// display match stats
-// FINALISE //
-*/
-
 
 int main(int argc, char *argv[]) {
 
@@ -148,24 +55,9 @@ struct Match
 Current_match.player_ranking.print("initialised Player Ranking: ");
 Current_match.ranking_history.print("initialised Ranking History: ");
 
-
 // repeat until total number of games is reached
 
 // initiate Game //
-/*
-struct Game
-{
-    bool is_revolution = false;
-    bool is_jack = false;
-    int top_player = 0;
-    int starting_player = 0;
-    bool is_suite_lock = false;
-    bool is_straight = false;
-    // game history, not implemented
-
-} Current_game;
-*/
-
 // initiate Players, Discard, Table, empty Hands
 imat state = init_state(Current_match.n_players, DECKSIZE);
 state.print("initialised state of game:");
@@ -221,141 +113,141 @@ if (Current_match.n_games_played > 0){
 }
 
     ////// Start of turns //////
+    int active_player = Current_match.starting_player;
     // repeat until game is over
-
-    
-
-    // Check possible moves
-    // includes suite lock, doubles, triples, quadruples, revolution, straight
-        // split into same value pools
-        // calculate possible moves:
-        // 1) Single, Double, Triple, ...
-        // 2) Straights
-        // remove duplicates (cards with same suite and value)
-        // split into same suite pools
-        // find neighbouring values
-                        // calculate possible moves:
-                        // Straight
-        // unite moves
-        ////// INFO SECTION //////
-        // check which of the possible moves are allowed considering the table
-        // if table is not empty
-            // straight
-            // single, double, triple, ...
-            // number of cards on top
-            // check equality of suite with top cards if necessary
-            // check whether the possible moves have a higher value
-                // if greater than 0, then move is possible
-                    // -13 for only 3 can top joker, joker can go under 3
-            // append "Pass"
+    while (min(Current_match.player_ranking) == 0){
 
     //// Action of players ////
     // Action: Choose move or pass
 
     // Feeding current state and game struct to NN
+    // TODO !!! //
+
+
+    // Output of NN redirected --> Currently simulated by
+    // dumb random move generator who mostly chooses "Pass".
 
     // Random move selection, might not be a valid move:
     bool is_valid = false;
+    ivec move(DECKSIZE);
     do
     {
         ivec n_cards_vec = randi<ivec>(1,distr_param(0, 4));
         int n_cards = n_cards_vec(0);
         ivec move_idx = randi<ivec>(n_cards, distr_param(0, DECKSIZE -1));
 
-        ivec move(DECKSIZE);
         move.zeros();
 
         for (int i=0; i < move_idx.size(); i++){
             move(move_idx(i)) = 1;
         }
-        move.t().raw_print("selected unvalidated move");
-
-        // Validate move
-        //int is_same_value = are_all_same_value(move);
-
-        //int is_same_suite = are_all_same_suite(move);
-
-        //printf("n cards: %d, same value?: %d, same suite?: %d\n", 
-        //    sum(move), is_same_value, is_same_suite);
-
-
-    // TESTING move, state, top_cards, ...
-
-
-
-    ivec same_move = move;
-    //ivec other_move = move;
-    //move(1) = 1;
-    //other_move(0) = 1;
-    //other_move.t().print("other move for comparison, testing:");
-    //int is_suite_matching = do_suites_match(move, other_move);
-    //printf("suites are matching?: %d\n", is_suite_matching);
-    
-    // manipulate state
-    //Current_game.is_straight = true;
-    Current_game.is_suite_lock = true;
-    state.row(4) = same_move.ones().t();
-    state(2,14) = 1;
-    state(2,12) = 1;
-    state(2,13) = 1;
-
-    move.zeros();
-    move(16) = 1;
-    move(17) = 1;
-    move(19) = 1;
-    //move(11) = 1;
-
-
-
-    print_state(state);
 
     is_valid = validate_move(state, move, Current_game, 0);
 
-
-
-    printf("Current move: ");
-    print_state_row(move, DECKSIZE);
-    printf("is move valid?: %d\n", is_valid);
-
-        is_valid = true;
     } while (is_valid == false);
 
-    // Choose move
+    //// End of Action ////
 
 
-    // update Player
-        // remove cards from hand
+    print_state(state);
+    printf("Current move: ");
+    print_state_row(move, DECKSIZE);
+    
+    // Player passes
+    if (sum(move) == 0) {
+        active_player += 1;
+        active_player % (Current_match.n_players -1);
+        break;
+        }
     // update Game
-    // update Table
-        // add top cards
-            // check suite lock condition
-            // check straight condition
+
+    ivec top_cards = state.row(2); 
+    ivec sec_top_cards = state.row(3); 
+        // check suite lock condition
+    if (do_suites_match(move, top_cards) == 1) {
+        Current_game.is_suite_lock = true;}
+        // check straight condition
+    if (is_straight(move) == 1) {Current_game.is_straight = true;}
+
+    // move top cards to 2nd-top-cards, and those to Discard
+    state = move_cards_from_to(state, 3, 1, sec_top_cards);
+    state = move_cards_from_to(state, 2, 3, top_cards);
+
+    // remove cards from hand and         
+    // add top cards
+
+    state = move_cards_from_to(state, active_player + 4, 2, move);
+
     ////// Special cards and revolution //////
     // if revolution is played
-        // update Game
+    if (sum(move) >= 4){
+        Current_game.is_revolution = true;
+    }
     // if 10 is played:
+
+    for (int i=28; i<32; i++){
+        ivec hand = state.row(active_player + 4);
+        if ((move(i) == 1) && (sum(hand) > 1)){
             // discard one card for every 10
                 // the last card can't be discarded
-            // Action: Choose card in Hand
-    //// End of Action ////
+        // Action: Choose card in Hand
+        
+        // Feeding current state and game struct to NN
+        // TODO !!! //
+
+
+        // Output of NN redirected --> Currently simulated by
+        // dumb move generator who chooses to discard the lowest.
+            uvec lowest_card_index = find( 
+                hand, 1, "first" );
+            state = move_card_from_to(state, 4 + active_player,
+                1, lowest_card_index(0));
+
+        //// End of Action ////
+
+            }
+        }
+    
     // if Jack is played:
+    for (int i=32; i<36; i++){
+        if (move(i) == 1) {
+            Current_game.is_jack = !Current_game.is_jack;
+            break;
+            }
+        }
         // update Table
     // if 8 is played:
-        // update Table
-        // update Game (starting player)
-                    // active player may play again
+    for (int i=20; i<24; i++){
+        if (move(i) == 1) {
+            // update Table
+            top_cards = state.row(2); 
+            sec_top_cards = state.row(3);
+            state = move_cards_from_to(state, 3, 1, sec_top_cards);
+            state = move_cards_from_to(state, 2, 1, top_cards); 
+
+            // active player may play again    
+            break;
+            }
+        }
+
     ////// Updating the game status //////
+
     // check if Hand of one Player is empty
+
         // repeat until all passed
             // check if all passed including player with top cards
+    Current_game.top_player = active_player;
+
             // empty the Table, player who played the last cards becomes active player
                 // update Table
             // check now wether the player is already done
             // next player's turn
             // exclude finished players
-        // repeat until one Player is left
+        // repeat until no players are left
+    }
     // end of game - update
     // Game
+
     // Match, starting player
     // End of Game //
     // repeat Game until total number of games is reached
@@ -365,25 +257,6 @@ if (Current_match.n_games_played > 0){
 // FINALISE //
 
 
-
-
-
-
-
-// Testing ground 
-
-
-/*
-state = add_card(state, 4, 2);
-state.print("state of game, card 2 added to row 4:");
-
-
-state = move_card_from_to(state, 0, 1, 5);
-state.print("state of game, card 5 moved from 0 to 1:");
-
-state = deal_hands(indices, state, 4);
-state.print("state of game, after dealing all hands");
-*/
 
 return 0;
 }

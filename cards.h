@@ -49,6 +49,20 @@ imat move_card_from_to(imat State, int from_row, int to_row, int index) {
     return State;
 }
 
+imat move_cards_from_to(imat State, int from_row, int to_row, ivec move){
+    // Takes a game state, two of its row indices and a move in vector form
+    // as input
+    // Returns the game state where the cards in move have been
+    // moved between the rows.
+    uvec indices = find(move == 1);
+    for (int i=0; i<indices.n_elem; i++){
+        int index = indices(i);
+        State = move_card_from_to(State, from_row, to_row, index);
+    }
+
+
+    return State;
+}
 
 imat deal_hands(ivec deck_shuffled_idx, imat State, int n_players) {
     // Takes indices of a shuffled deck, a game state
