@@ -10,6 +10,7 @@
 #include "cards.h"
 #include "logic.h"
 #include "human.h"
+#include "action.h"
 // shortening the names vec instead of arma::vec
 using namespace std;
 using namespace arma;
@@ -18,7 +19,7 @@ using namespace arma;
 // Global variables
 #define N_PLAYERS 4
 #define DECKSIZE 55
-#define N_GAMES  10
+#define N_GAMES  100
 
 
 int main(int argc, char *argv[]) {
@@ -29,17 +30,21 @@ int main(int argc, char *argv[]) {
 // game modes currently not implemented.
 // GAME_MODE = "onehuman"
 
+// GLOBALS
+bool is_valid = false; // is the randomly selected play valid?
+ivec move(DECKSIZE);  // vector with current move (play or pass)
+
+
 // initiate Match
     // define game mode, number of players, sequence of players,
     // total number of games, starting player for next game.
-struct Match
-{
+struct Match{
     Match() :   player_ranking(N_PLAYERS),
                 ranking_history(N_GAMES, N_PLAYERS) 
             {
             player_ranking.ones();
             player_ranking = player_ranking * -1; 
-            ranking_history.ones() * -1;
+            ranking_history.ones();
             ranking_history = ranking_history * -1;
              }
 
@@ -61,11 +66,11 @@ Current_match.ranking_history.print("initialised Ranking History: ");
 for (int game_count = 0; 
     game_count < Current_match.n_total_games;
     game_count++) {
+    printf("Starting game number %d\n", game_count + 1);
 
 // initiate Game //
 // initiate Players, Discard, Table, empty Hands
 imat state = init_state(Current_match.n_players, DECKSIZE);
-state.print("initialised state of game:");
 
 // shuffle deck
 ivec indices = shuffle_deck(DECKSIZE);
@@ -73,7 +78,8 @@ ivec indices = shuffle_deck(DECKSIZE);
 // deal Hands
 
 state = deal_hands(indices, state, 4);
-state.raw_print("state of game after dealing Hands:");
+printf("state of game after dealing Hands:\n");
+print_state(state);
 
 if (Current_match.n_games_played > 0){
     // Exchange of cards between players    
@@ -84,36 +90,38 @@ if (Current_match.n_games_played > 0){
         // second player and second-to-last player
         // swap cards
 
-    // for testing:
-    // Current_match.player_ranking = {0,1,2,3};
-    
     int first_player = Current_match.player_ranking(0);
     int second_player = Current_match.player_ranking(1);
     int last_player = Current_match.player_ranking(N_PLAYERS -1);
     int second_to_last_player = Current_match.player_ranking(N_PLAYERS -2);
-
+    
     for (int i=0; i<=1; i++) {
-        uvec lowest_card_index = find( state.row(4 + first_player), 
+        uvec lowest_card_index = find( state.row(4 + first_player).t(), 
             1, "first" );
         state = move_card_from_to(state, 4 + first_player,
             4 + last_player, lowest_card_index(0));
-        uvec highest_card_index = find( state.row(4 + last_player), 
+        uvec highest_card_index = find( state.row(4 + last_player).t(), 
             1, "last" );
         state = move_card_from_to(state, 4 + last_player,
             4 + first_player, highest_card_index(0));
         }
-
-    uvec lowest_card_index = find( state.row(4 + second_player), 
+    
+    uvec lowest_card_index = find( state.row(4 + second_player).t(), 
         1, "first" );
     state = move_card_from_to(state, 4 + second_player,
         4 + second_to_last_player, lowest_card_index(0));
-    uvec highest_card_index = find( state.row(4 + second_to_last_player), 
+    uvec highest_card_index = find( state.row(4 + second_to_last_player).t(), 
         1, "last" );
     state = move_card_from_to(state, 4 + second_to_last_player,
         4 + second_player, highest_card_index(0));
 
 
-    state.raw_print("state of game after swapping cards:");
+    printf("state of game after swapping cards:\n");
+    print_state(state);
+
+    // setting player ranking back for game logic
+    Current_match.player_ranking.ones();
+    Current_match.player_ranking = Current_match.player_ranking * -1;
 
 }
 
@@ -121,6 +129,7 @@ if (Current_match.n_games_played > 0){
     int active_player = Current_match.starting_player;
     // repeat until game is over
     while (min(Current_match.player_ranking) == -1){
+    //printf("------------\nTurn starts\n--------------\n");
 
     //// Action of players ////
     // Action: Choose move or pass
@@ -133,53 +142,38 @@ if (Current_match.n_games_played > 0){
     // dumb random move generator who mostly chooses "Pass".
 
     // Random move selection, might not be a valid move:
-    bool is_valid = false;
-    ivec move(DECKSIZE);
-    do
-    {
-        ivec n_cards_vec = randi<ivec>(1,distr_param(0, 4));
-        int n_cards = n_cards_vec(0);
-        ivec move_idx = randi<ivec>(n_cards, distr_param(0, DECKSIZE -1));
-
-        move.zeros();
-
-        for (int i=0; i < move_idx.size(); i++){
-            move(move_idx(i)) = 1;
-        }
-
-    is_valid = validate_move(state, move, Current_game, 0);
-
-    } while (is_valid == false);
+    ivec move = choose_move_randomly(state, Current_game, 
+        active_player, DECKSIZE);
 
     //// End of Action ////
-
-
-    print_state(state);
-    printf("Current move: ");
-    print_state_row(move, DECKSIZE);
     
     // Player passes
-    if (sum(move) == 0) {}
+    if (sum(move) == 0) {
+        printf("PASS \n");
+
+    }
     // update Game
     else {
-    ivec top_cards = state.row(2); 
-    ivec sec_top_cards = state.row(3); 
+
+        printf("PLAY \n");
+
         // check suite lock condition
+        ivec top_cards = state.row(2).t(); 
     if (do_suites_match(move, top_cards) == 1) {
         Current_game.is_suite_lock = true;}
         // check straight condition
     if (is_straight(move) == 1) {Current_game.is_straight = true;}
 
-    // move top cards to 2nd-top-cards, and those to Discard
-    state = move_cards_from_to(state, 3, 1, sec_top_cards);
-    state = move_cards_from_to(state, 2, 3, top_cards);
-
-    // remove cards from hand and         
-    // add top cards
-
-    state = move_cards_from_to(state, active_player + 4, 2, move);
+    // Card(s) played, table, hand and discard updated.
+    state = play_cards(state, move, active_player);
+    
+    printf("Current move (player %d): ", active_player);
+    print_state_row(move, DECKSIZE);
+    print_state(state);
 
     ////// Special cards and revolution //////
+    //printf("Special cards are triggered\n");
+
     // if revolution is played
     if (sum(move) >= 4){
         Current_game.is_revolution = true;
@@ -187,8 +181,10 @@ if (Current_match.n_games_played > 0){
     // if 10 is played:
 
     for (int i=28; i<32; i++){
-        ivec hand = state.row(active_player + 4);
+        ivec hand = state.row(active_player + 4).t();
         if ((move(i) == 1) && (sum(hand) > 1)){
+            printf("Discard after a 10 is played\n");
+
             // discard one card for every 10
                 // the last card can't be discarded
         // Action: Choose card in Hand
@@ -208,10 +204,10 @@ if (Current_match.n_games_played > 0){
 
             }
         }
-    
     // if Jack is played:
     for (int i=32; i<36; i++){
         if (move(i) == 1) {
+            printf("A Jack has been played\n");
             Current_game.is_jack = !Current_game.is_jack;
             break;
             }
@@ -221,94 +217,118 @@ if (Current_match.n_games_played > 0){
     int is_eight = false;
     for (int i=20; i<24; i++){
         if (move(i) == 1) {
-            // update Table
-            top_cards = state.row(2); 
-            sec_top_cards = state.row(3);
-            state = move_cards_from_to(state, 3, 1, sec_top_cards);
-            state = move_cards_from_to(state, 2, 1, top_cards); 
+            printf("An eight has been played\n");
+            // clear Table
+            state = clear_table(state);
 
-            // check if Hand of active Player is empty
-            if (sum(state.row(active_player + 4) == 0)){
-                uvec lowest_zero_index = find( 
-                Current_match.player_ranking, 
-                    1, "first" );
-                // Player has finished!
-                Current_match.player_ranking(lowest_zero_index(0)) 
-                    = active_player;
-                    }
-            // exiting for loop
+            // update game struct
+            Current_game.is_jack = false;
+            Current_game.is_suite_lock = false;
+            Current_game.is_straight = false;
+            Current_game.top_player = -2;
+
             is_eight = true;    
-            break;
             }
         }
     if (is_eight == true){
-        // active player may play again
-        continue;
+        // check if Hand of active Player is empty
+        if (sum(state.row(active_player + 4) == 0)){}
+        else { 
+            // active player may play again
+            continue;
+            }
         }
-        }
+    }
     ////// Updating the game status //////
+       //printf("Updating Game Status\n");
 
     // check if Hand of active Player is empty
-    if (sum(state.row(active_player + 4) == 0)){
+    if (sum(state.row(active_player + 4)) == 0){
         uvec lowest_zero_index = find( 
-            Current_match.player_ranking, 
+            Current_match.player_ranking == -1, 
             1, "first" );
         // Player has finished!
+        printf("Player %d has finished!\n", active_player);
         Current_match.player_ranking(lowest_zero_index(0)) = active_player;
+        //Current_match.player_ranking.raw_print("Ranking in Running Game");
         }
 
 
         // repeat until all passed
             // check if all passed including player with top cards
+        //printf("Whose cards are on top?: %d\n", Current_game.top_player);
+        //printf("Whose turn is it?: %d\n", active_player);
         if ((Current_game.top_player == active_player) 
-            && (sum(move) == 1)){
+            && (sum(move) == 0)){
             // Empty table
-            ivec top_cards = state.row(2); 
-            ivec sec_top_cards = state.row(3);
-            state = move_cards_from_to(state, 3, 1, sec_top_cards);
-            state = move_cards_from_to(state, 2, 1, top_cards); 
+            state = clear_table(state);
+
+            Current_game.is_jack = false;
+            Current_game.is_suite_lock = false;
+            Current_game.is_straight = false;
+            Current_game.top_player = -2;
 
             // Top player = active player may play again.
-            Current_game.top_player = active_player;
-
-            continue;
+            if (sum(state.row(active_player + 4)) != 0){
+                //printf("All passed. Player %d opens\n", active_player);
+                continue;                
+            }
+     
         }
+        else {
+            if (sum(move) != 0) {
+                Current_game.top_player = active_player;
+                }
+            }
 
-        // next player's turn
+        // change top player if he or she has already finished.
+        while ((any(Current_match.player_ranking 
+            == Current_game.top_player) == true) &&
+            (all(Current_match.player_ranking > -1) == false)){
+
+            Current_game.top_player += 1;
+            Current_game.top_player = Current_game.top_player 
+                % Current_match.n_players;
+            printf("Top player virtually changed: %d\n", 
+                Current_game.top_player);
+
+                } 
+
+        // next player's turn, skip players who have already finished
         do {
-
         active_player += 1;
         active_player = 
             active_player % Current_match.n_players;
-
+        //printf("Next player's turn, Player: %d\n", active_player);
+        //Current_match.player_ranking.raw_print("Ranking of Running game");
+        //printf("Check booleans: break, all done? %d, Player done? %d\n",
+        //    all(Current_match.player_ranking > -1),
+        //    any(Current_match.player_ranking == active_player)
+        //    ); 
             // check if all players are already done
-            if (all(Current_match.player_ranking) == false) {break;}
+            if (all(Current_match.player_ranking > -1) == true) {break;}
             } while
             // check now wether the player is already done
-            (all(Current_match.player_ranking - active_player) == true);
+            (any(Current_match.player_ranking == active_player) == true);
 
     }
-    // end of game - update
-        // Game
+    // end of game - update ...
+        // ... Game
     Current_game.is_revolution = false;
     Current_game.is_jack = false;
-    Current_game.top_player = Current_match.player_ranking(0);
+    Current_game.top_player = -2;
     Current_game.starting_player = Current_match.player_ranking(0);
     Current_game.is_suite_lock = false;
     Current_game.is_straight = false;
 
-        // Match, starting player
+        // ... Match, starting player
     Current_match.starting_player = Current_match.player_ranking(0);
 
-    Current_match.n_games_played = 1;
+    Current_match.n_games_played += 1;
     Current_match.ranking_history.row(Current_match.n_games_played -1) 
         = Current_match.player_ranking.t();
-    Current_match.player_ranking.ones();
-    Current_match.player_ranking = Current_match.player_ranking * -1;
 
     // End of Game //
-
-    // repeat Game until total number of games is reached
     }
 // End of Match //
 
@@ -316,7 +336,7 @@ if (Current_match.n_games_played > 0){
 Current_match.ranking_history.print("Ranking history:");
 
 // Anounce ranking and winner
-hist(Current_match.ranking_history.col(0)).print("Histogram of wins");
+//hist(Current_match.ranking_history.col(0)).print("Histogram of wins");
 
 
 // FINALISE //

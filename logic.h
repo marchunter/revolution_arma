@@ -14,7 +14,7 @@ struct Game
 {
     bool is_revolution = false;
     bool is_jack = false;
-    int top_player = 0;
+    int top_player = -2;
     int starting_player = 0;
     bool is_suite_lock = false;
     bool is_straight = false;
@@ -160,13 +160,11 @@ bool validate_move(imat State, ivec move,
 
     // Check if cards are in hand:
     ivec Hand = State.row(player_number + 4).t();
-    Hand.t().print("Hand:");
-    move.t().print("move:");
 
     ivec validation = Hand - move;
     int minimum = validation.min();
     if (minimum < 0){
-        printf("These cards are not in hand!\n");
+        //printf("These cards are not in hand!\n");
         return false;
         }
 
@@ -218,7 +216,6 @@ bool validate_move(imat State, ivec move,
         // check for inverse condition!
         bool is_inverse = (Current_game.is_jack != 
             Current_game.is_revolution); 
-        printf("is inverse condition met? %d\n", is_inverse);
 
         // higher (sometimes lower)?
         if (is_inverse == false) {
@@ -237,6 +234,35 @@ bool validate_move(imat State, ivec move,
     }
 
 
+ivec choose_move_randomly(imat state, Game Current_game, 
+        int active_player, int decksize){
+    int is_valid = false;
+    int n_tries = 0;
+    ivec move(decksize);
+    do
+    {
+
+        ivec n_cards_vec = randi<ivec>(1,distr_param(1, 4));
+        int n_cards = n_cards_vec(0);
+        ivec move_idx = randi<ivec>(n_cards, distr_param(0, decksize -1));
+
+        move.zeros();
+
+        for (int i=0; i < move_idx.size(); i++){
+            move(move_idx(i)) = 1;
+        }
+        n_tries +=1;
+        if (n_tries == 30){move.zeros();}
+
+
+    is_valid = validate_move(state, move, Current_game, active_player);
+
+    } while (is_valid == false);
+
+
+
+    return move;
+}
 
 
 

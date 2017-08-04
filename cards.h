@@ -29,7 +29,7 @@ imat remove_card(imat State, int from_row, int index){
     // Returns the state.
 
     if (State(from_row, index) <= 0) {printf("ERROR! Illegal move: Card with index %d is not present in Object\n", index);
-    State.t().print("Fix ERROR in here! The current object is:");
+    State.raw_print("Fix ERROR in here! The current object is:");
      }
 
     else {State(from_row, index) -= 1;}
@@ -54,12 +54,12 @@ imat move_cards_from_to(imat State, int from_row, int to_row, ivec move){
     // as input
     // Returns the game state where the cards in move have been
     // moved between the rows.
-    uvec indices = find(move == 1);
-    for (int i=0; i<indices.n_elem; i++){
-        int index = indices(i);
-        State = move_card_from_to(State, from_row, to_row, index);
-    }
-
+    
+    for (int i = 0; i < move.n_elem; i++){
+        if (move(i) == 1){
+            State = move_card_from_to(State, from_row, to_row, i);
+            }
+        }
 
     return State;
 }
@@ -84,5 +84,3 @@ imat deal_hands(ivec deck_shuffled_idx, imat State, int n_players) {
     }
     return State;
 }
-
-
