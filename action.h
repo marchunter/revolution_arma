@@ -38,16 +38,15 @@ imat clear_table(imat state){
 }
 
 
-/* Currently not working because of struct
-    state = swap_cards(state, Current_match, N_PLAYERS);
+//Currently not working because of struct
+//     state = swap_cards(state, Current_match, n_players);
 
-
-imat swap_cards(imat state, Match Current_match, int N_PLAYERS){
+imat swap_cards(imat state, Match Current_match, int n_players){
 
     int first_player = Current_match.player_ranking(0);
     int second_player = Current_match.player_ranking(1);
-    int last_player = Current_match.player_ranking(N_PLAYERS -1);
-    int second_to_last_player = Current_match.player_ranking(N_PLAYERS -2);
+    int last_player = Current_match.player_ranking(n_players -1);
+    int second_to_last_player = Current_match.player_ranking(n_players -2);
     
     for (int i=0; i<=1; i++) {
         uvec lowest_card_index = find( state.row(4 + first_player).t(), 
@@ -72,4 +71,3 @@ imat swap_cards(imat state, Match Current_match, int N_PLAYERS){
 
     return state;
 }
-*/

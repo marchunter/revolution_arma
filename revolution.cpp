@@ -5,7 +5,7 @@
 
 #include <iostream>
 #include <armadillo>
-#include "arma_func_example.h"
+#include "revolution.h"
 #include "init.h"
 #include "cards.h"
 #include "logic.h"
@@ -14,13 +14,6 @@
 // shortening the names vec instead of arma::vec
 using namespace std;
 using namespace arma;
-
-
-// Global variables
-#define N_PLAYERS 4
-#define DECKSIZE 55
-#define N_GAMES  100
-
 
 int main(int argc, char *argv[]) {
 
@@ -38,26 +31,7 @@ ivec move(DECKSIZE);  // vector with current move (play or pass)
 // initiate Match
     // define game mode, number of players, sequence of players,
     // total number of games, starting player for next game.
-struct Match{
-    Match() :   player_ranking(N_PLAYERS),
-                ranking_history(N_GAMES, N_PLAYERS) 
-            {
-            player_ranking.ones();
-            player_ranking = player_ranking * -1; 
-            ranking_history.ones();
-            ranking_history = ranking_history * -1;
-             }
 
-    int n_players = N_PLAYERS;
-    int n_total_games = N_GAMES;
-    ivec player_ranking; 
-    int n_games_played = 0;
-    imat ranking_history; 
-    int starting_player = 0;
-    // match history, not implemented
-    // game mode, not implemented
-
-} Current_match;
 
 Current_match.player_ranking.print("initialised Player Ranking: ");
 Current_match.ranking_history.print("initialised Ranking History: ");
@@ -76,10 +50,10 @@ imat state = init_state(Current_match.n_players, DECKSIZE);
 ivec indices = shuffle_deck(DECKSIZE);
 
 // deal Hands
-
 state = deal_hands(indices, state, 4);
 printf("state of game after dealing Hands:\n");
 print_state(state);
+
 
 if (Current_match.n_games_played > 0){
     // Exchange of cards between players    
@@ -90,31 +64,7 @@ if (Current_match.n_games_played > 0){
         // second player and second-to-last player
         // swap cards
 
-    int first_player = Current_match.player_ranking(0);
-    int second_player = Current_match.player_ranking(1);
-    int last_player = Current_match.player_ranking(N_PLAYERS -1);
-    int second_to_last_player = Current_match.player_ranking(N_PLAYERS -2);
-    
-    for (int i=0; i<=1; i++) {
-        uvec lowest_card_index = find( state.row(4 + first_player).t(), 
-            1, "first" );
-        state = move_card_from_to(state, 4 + first_player,
-            4 + last_player, lowest_card_index(0));
-        uvec highest_card_index = find( state.row(4 + last_player).t(), 
-            1, "last" );
-        state = move_card_from_to(state, 4 + last_player,
-            4 + first_player, highest_card_index(0));
-        }
-    
-    uvec lowest_card_index = find( state.row(4 + second_player).t(), 
-        1, "first" );
-    state = move_card_from_to(state, 4 + second_player,
-        4 + second_to_last_player, lowest_card_index(0));
-    uvec highest_card_index = find( state.row(4 + second_to_last_player).t(), 
-        1, "last" );
-    state = move_card_from_to(state, 4 + second_to_last_player,
-        4 + second_player, highest_card_index(0));
-
+    state = swap_cards(state, Current_match, N_PLAYERS);
 
     printf("state of game after swapping cards:\n");
     print_state(state);
@@ -137,6 +87,16 @@ if (Current_match.n_games_played > 0){
     // Feeding current state and game struct to NN
     // TODO !!! //
 
+
+    ivec nn_in(4 * DECKSIZE);
+    uvec in_rows = zeros<uvec>(4);
+    in_rows(0) = 1;
+    in_rows(1) = 2;
+    in_rows(2) = 3;
+    in_rows(3) = active_player + 4;
+    nn_in = vectorise(state.rows(in_rows));
+
+    ivec nn_out(DECKSIZE);
 
     // Output of NN redirected --> Currently simulated by
     // dumb random move generator who mostly chooses "Pass".
@@ -192,6 +152,19 @@ if (Current_match.n_games_played > 0){
         // Feeding current state and game struct to NN
         // TODO !!! //
 
+
+        ivec nn_in(4 * DECKSIZE);
+        uvec in_rows = zeros<uvec>(4);
+        in_rows(0) = 1;
+        in_rows(1) = 2;
+        in_rows(2) = 3;
+        in_rows(3) = active_player + 4;
+        nn_in = vectorise(state.rows(in_rows));
+            ivec nn_out(DECKSIZE);
+
+        // TODO: needs to be validated by
+        //int is_valid = false; 
+        //if (sum(nn_out) == 1){is_valid = true;}
 
         // Output of NN redirected --> Currently simulated by
         // dumb move generator who chooses to discard the lowest.
