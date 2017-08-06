@@ -4,6 +4,14 @@
 #ifndef REVOLUTION_H
 #define REVOLUTION_H
 
+
+// Global variables
+#define N_PLAYERS 4
+
+#define DECKSIZE 55 
+
+#define N_GAMES 100
+
 #include <iostream>
 #include <armadillo>
 
@@ -11,12 +19,6 @@
 using namespace std;
 using namespace arma;
 
-// Global variables
-#define N_PLAYERS 4
-
-#define DECKSIZE 55 
-
-#define N_GAMES 100 
 
 
 struct Match{

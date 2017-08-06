@@ -78,7 +78,7 @@ imat deal_hands(ivec deck_shuffled_idx, imat State, int n_players) {
         for (int i = n_cards_p_hand * player_number; 
             i <= (n_cards_p_hand * ( 1 + player_number)) - 1; i++) {
             int index = deck_shuffled_idx[i];
-            printf("move card INDEX: %d \n", index);
+            //printf("move card INDEX: %d \n", index);
             State = move_card_from_to(State, 0, 4 + player_number, index);      
         }   
     }

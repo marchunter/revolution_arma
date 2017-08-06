@@ -3,6 +3,7 @@
 //// Japanese game for any number of players
 //// execution of the game
 
+#include <unistd.h>
 #include <iostream>
 #include <armadillo>
 #include "revolution.h"
@@ -11,6 +12,8 @@
 #include "logic.h"
 #include "human.h"
 #include "action.h"
+#include "simpleNN.h"
+#include "ga.h"
 // shortening the names vec instead of arma::vec
 using namespace std;
 using namespace arma;
@@ -26,21 +29,67 @@ int main(int argc, char *argv[]) {
 // GLOBALS
 bool is_valid = false; // is the randomly selected play valid?
 ivec move(DECKSIZE);  // vector with current move (play or pass)
+int n_total_pass = 0;
 
+// GA variables
+int population = 100;
+vec fitness=zeros<vec>(population);
+
+
+// initialise structure for NN:
+vec inp(4 * DECKSIZE);
+//vec inp = ones<vec>(1);
+int inpSize = inp.n_elem;
+int height = 5;
+int depth = 5;
+int outputSize = DECKSIZE;
+
+
+// initialise weights for NN:
+mat inpWeights = ones<mat>(height,inpSize);
+cube weights = ones<cube>(height,height,depth);
+mat outWeights = ones<mat>(outputSize,height);
+
+// initialise biases for NN:
+vec inpBiases = ones<vec>(height);
+mat biases = ones<mat>(height,depth);
+vec outBiases = ones<vec>(outputSize);
+
+
+
+// initialise random weights with population for NN:
+mat DNAS=1 - 2*randu<mat>(fitness.n_elem, 
+    inpWeights.n_elem + weights.n_elem + outWeights.n_elem + 
+    inpBiases.n_elem + biases.n_elem + outBiases.n_elem);
+
+
+// buffers for NN:
+mat outputs = zeros<mat>(population,outBiases.n_elem);
+vec outputsFinal = zeros<vec>(outBiases.n_elem);
+//vec finalResult(myx.n_elem);
+
+
+
+// Start of GA for loop
+for (int generation = 0; generation < 10; generation++){
+
+n_total_pass = 0;
+fitness.zeros();
+printf("Starting generation %d\n", generation);
 
 // initiate Match
     // define game mode, number of players, sequence of players,
     // total number of games, starting player for next game.
 
 
-Current_match.player_ranking.print("initialised Player Ranking: ");
-Current_match.ranking_history.print("initialised Ranking History: ");
+//Current_match.player_ranking.print("initialised Player Ranking: ");
+//Current_match.ranking_history.print("initialised Ranking History: ");
 
 // repeat until total number of games is reached
 for (int game_count = 0; 
     game_count < Current_match.n_total_games;
     game_count++) {
-    printf("Starting game number %d\n", game_count + 1);
+    //printf("Starting game number %d\n", game_count + 1);
 
 // initiate Game //
 // initiate Players, Discard, Table, empty Hands
@@ -51,8 +100,8 @@ ivec indices = shuffle_deck(DECKSIZE);
 
 // deal Hands
 state = deal_hands(indices, state, 4);
-printf("state of game after dealing Hands:\n");
-print_state(state);
+//printf("state of game after dealing Hands:\n");
+//print_state(state);
 
 
 if (Current_match.n_games_played > 0){
@@ -66,15 +115,14 @@ if (Current_match.n_games_played > 0){
 
     state = swap_cards(state, Current_match, N_PLAYERS);
 
-    printf("state of game after swapping cards:\n");
-    print_state(state);
+    //printf("state of game after swapping cards:\n");
+    //print_state(state);
 
     // setting player ranking back for game logic
     Current_match.player_ranking.ones();
     Current_match.player_ranking = Current_match.player_ranking * -1;
 
 }
-
     ////// Start of turns //////
     int active_player = Current_match.starting_player;
     // repeat until game is over
@@ -83,39 +131,70 @@ if (Current_match.n_games_played > 0){
 
     //// Action of players ////
     // Action: Choose move or pass
+    ivec move(DECKSIZE);
+
+    // default move is PASS
+    move.zeros();
 
     // Feeding current state and game struct to NN
     // TODO !!! //
 
-
-    ivec nn_in(4 * DECKSIZE);
+    ivec nn_i_inp(4 * DECKSIZE);
     uvec in_rows = zeros<uvec>(4);
     in_rows(0) = 1;
     in_rows(1) = 2;
     in_rows(2) = 3;
     in_rows(3) = active_player + 4;
-    nn_in = vectorise(state.rows(in_rows));
+    nn_i_inp = vectorise(state.rows(in_rows));
+    inp = conv_to<vec>::from(nn_i_inp);
 
-    ivec nn_out(DECKSIZE);
+    vec nn_out(DECKSIZE);
 
-    // Output of NN redirected --> Currently simulated by
-    // dumb random move generator who mostly chooses "Pass".
+    outputs = simpleNNmat(DNAS,inp, inpWeights, weights, outWeights, 
+        inpBiases, biases, outBiases);
 
-    // Random move selection, might not be a valid move:
-    ivec move = choose_move_randomly(state, Current_game, 
-        active_player, DECKSIZE);
+    int is_at_least_one_valid = false;
+    for (int person=0; person < population; person++){
+  	    int is_valid = false;
 
+    	nn_out = outputs.row(person).t();
+    	//uvec max_move_uvec(DECKSIZE);
+		int maximum_index = index_max(nn_out);
+    	ivec max_move(DECKSIZE);
+    	max_move.zeros();
+    	max_move(maximum_index) = 1; 
+    	//conv_to<ivec>::from(max_move_uvec);
+   		is_valid = validate_move(state, max_move, 
+   			    Current_game, active_player);
+   		if (is_valid == true){
+   			move = max_move;
+   			is_at_least_one_valid = true;
+   		}
+   		else {
+   			// increase fitness
+   			fitness(person) += 1;
+   		}
+    }
+
+    // Random move selection after all the NNs have failed:
+    if (is_at_least_one_valid == false){
+	    
+	    move = choose_move_randomly(state, Current_game, 
+    	    active_player, DECKSIZE);
+    }
+    
     //// End of Action ////
     
     // Player passes
     if (sum(move) == 0) {
-        printf("PASS \n");
-
+        //printf("PASS \n");
+        n_total_pass +=1;
+        //usleep(100000);
     }
     // update Game
     else {
 
-        printf("PLAY \n");
+        //printf("PLAY \n");
 
         // check suite lock condition
         ivec top_cards = state.row(2).t(); 
@@ -127,9 +206,12 @@ if (Current_match.n_games_played > 0){
     // Card(s) played, table, hand and discard updated.
     state = play_cards(state, move, active_player);
     
-    printf("Current move (player %d): ", active_player);
-    print_state_row(move, DECKSIZE);
-    print_state(state);
+    //printf("Current move (player %d): ", active_player);
+    //print_state_row(move, DECKSIZE);
+    //print_state(state);
+
+
+
 
     ////// Special cards and revolution //////
     //printf("Special cards are triggered\n");
@@ -143,7 +225,7 @@ if (Current_match.n_games_played > 0){
     for (int i=28; i<32; i++){
         ivec hand = state.row(active_player + 4).t();
         if ((move(i) == 1) && (sum(hand) > 1)){
-            printf("Discard after a 10 is played\n");
+            //printf("Discard after a 10 is played\n");
 
             // discard one card for every 10
                 // the last card can't be discarded
@@ -152,7 +234,7 @@ if (Current_match.n_games_played > 0){
         // Feeding current state and game struct to NN
         // TODO !!! //
 
-
+          /*
         ivec nn_in(4 * DECKSIZE);
         uvec in_rows = zeros<uvec>(4);
         in_rows(0) = 1;
@@ -172,7 +254,7 @@ if (Current_match.n_games_played > 0){
                 hand, 1, "first" );
             state = move_card_from_to(state, 4 + active_player,
                 1, lowest_card_index(0));
-
+		*/
         //// End of Action ////
 
             }
@@ -180,7 +262,7 @@ if (Current_match.n_games_played > 0){
     // if Jack is played:
     for (int i=32; i<36; i++){
         if (move(i) == 1) {
-            printf("A Jack has been played\n");
+            //printf("A Jack has been played\n");
             Current_game.is_jack = !Current_game.is_jack;
             break;
             }
@@ -190,7 +272,7 @@ if (Current_match.n_games_played > 0){
     int is_eight = false;
     for (int i=20; i<24; i++){
         if (move(i) == 1) {
-            printf("An eight has been played\n");
+            //printf("An eight has been played\n");
             // clear Table
             state = clear_table(state);
 
@@ -221,7 +303,7 @@ if (Current_match.n_games_played > 0){
             Current_match.player_ranking == -1, 
             1, "first" );
         // Player has finished!
-        printf("Player %d has finished!\n", active_player);
+        //printf("Player %d has finished!\n", active_player);
         Current_match.player_ranking(lowest_zero_index(0)) = active_player;
         //Current_match.player_ranking.raw_print("Ranking in Running Game");
         }
@@ -262,8 +344,8 @@ if (Current_match.n_games_played > 0){
             Current_game.top_player += 1;
             Current_game.top_player = Current_game.top_player 
                 % Current_match.n_players;
-            printf("Top player virtually changed: %d\n", 
-                Current_game.top_player);
+            //printf("Top player virtually changed: %d\n", 
+                //Current_game.top_player);
 
                 } 
 
@@ -311,8 +393,35 @@ Current_match.ranking_history.print("Ranking history:");
 // Anounce ranking and winner
 //hist(Current_match.ranking_history.col(0)).print("Histogram of wins");
 
+// reset Match:
+Current_match.player_ranking.ones();
+Current_match.player_ranking = Current_match.player_ranking * -1; 
+Current_match.ranking_history.ones();
+Current_match.ranking_history = Current_match.ranking_history * -1;
+ 
+Current_match.n_games_played = 0;
+Current_match.starting_player = 0;
+
+// update GA
+int temperature = 10;
+int alpha = 1;
+
+printf("before DNA breeding\n");
+
+DNAS = ga_eval(DNAS, fitness, alpha,0.00000001, temperature);
+
+
+fitness.print("Fitness of current generation");
+printf("Total number of passes: %d\n", n_total_pass);
+
+sleep(2);
+// End of GA for loop
+}
 
 // FINALISE //
+
+printf("Total number of passes%d\n", n_total_pass);
+fitness.print("Fitness Final");
 
 
 
