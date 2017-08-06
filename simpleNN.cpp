@@ -16,6 +16,16 @@ vec sigmoid(vec inp){
 }
 //------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------
+vec myTanh(vec inp){
+    return tanh(inp);
+}
+//------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------
+rowvec sigmoidR(rowvec inp){
+    return 1/(1 + exp(-inp));
+}
+//------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------
 mat simpleNNmat(mat X, vec inp, mat inpWeights , cube weights, mat outWeights ,vec inpBiases, mat biases, vec outBiases){ 
 
     vec buffVec;
@@ -72,13 +82,13 @@ mat simpleNNmat(mat X, vec inp, mat inpWeights , cube weights, mat outWeights ,v
         }
 
 // Feed Forward into hidden.
-        buffVec = sigmoid(inpWeights*inp + inpBiases);
+        buffVec = myTanh(inpWeights*inp + inpBiases);
 // Feed Forward each hidden Layer.
         for(int l = 0; l < weights.n_slices; l++){
-            buffVec = sigmoid(weights.slice(l)*buffVec + biases.col(l));
+            buffVec = myTanh(weights.slice(l)*buffVec + biases.col(l));
           }
 // Feed Forward each hidden Layer.
-          Y.row(i) = (outWeights*buffVec).t() + outBiases.t();
+          Y.row(i) = sigmoidR((outWeights*buffVec).t() + outBiases.t());
    largeI = 0;
    }
 

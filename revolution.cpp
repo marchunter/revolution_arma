@@ -31,16 +31,20 @@ bool is_valid = false; // is the randomly selected play valid?
 ivec move(DECKSIZE);  // vector with current move (play or pass)
 int n_total_pass = 0;
 
+
 // GA variables
 int population = 100;
 vec fitness=zeros<vec>(population);
+int n_generations = 20;
 
+vec gen_best_fitness(n_generations);
+ivec gen_n_passes(n_generations);
 
 // initialise structure for NN:
 vec inp(4 * DECKSIZE);
 //vec inp = ones<vec>(1);
 int inpSize = inp.n_elem;
-int height = 5;
+int height = 10;
 int depth = 5;
 int outputSize = DECKSIZE;
 
@@ -71,7 +75,7 @@ vec outputsFinal = zeros<vec>(outBiases.n_elem);
 
 
 // Start of GA for loop
-for (int generation = 0; generation < 10; generation++){
+for (int generation = 0; generation < n_generations; generation++){
 
 n_total_pass = 0;
 fitness.zeros();
@@ -90,6 +94,19 @@ for (int game_count = 0;
     game_count < Current_match.n_total_games;
     game_count++) {
     //printf("Starting game number %d\n", game_count + 1);
+
+// Divide population into player seats.
+ivec pop_shuffled_indices = shuffle_deck(population);
+ivec pop_seating(population);
+for (int i=0; i < pop_shuffled_indices.n_elem; i++){
+    // will take values between 0 and N_PLAYERS - 1.
+    pop_seating(pop_shuffled_indices(i)) 
+        = (Current_match.n_players) * (i)/ pop_seating.n_elem;
+
+}
+
+//pop_seating.t().print("Population Seating distributed: ");
+//cout << sum(pop_seating) << endl;
 
 // initiate Game //
 // initiate Players, Discard, Table, empty Hands
@@ -170,10 +187,12 @@ if (Current_match.n_games_played > 0){
    			move = max_move;
    			is_at_least_one_valid = true;
    		}
-   		else {
+   		/* // Punish whenever passing, not good strategy 
+        else {
    			// increase fitness
    			fitness(person) += 1;
    		}
+        */
     }
 
     // Random move selection after all the NNs have failed:
@@ -383,6 +402,16 @@ if (Current_match.n_games_played > 0){
     Current_match.ranking_history.row(Current_match.n_games_played -1) 
         = Current_match.player_ranking.t();
 
+
+    // Winners of the population will get a treat
+    for (int i = 0; i < pop_seating.n_elem; i++){
+        if (pop_seating(i) == Current_game.starting_player){
+            fitness(i) -= 1;
+        }
+    
+    }
+    
+
     // End of Game //
     }
 // End of Match //
@@ -412,7 +441,12 @@ DNAS = ga_eval(DNAS, fitness, alpha,0.00000001, temperature);
 
 
 fitness.print("Fitness of current generation");
+printf("Fittest person: %f\n", min(fitness));
 printf("Total number of passes: %d\n", n_total_pass);
+
+
+gen_best_fitness(generation) = min(fitness);
+gen_n_passes(generation) = n_total_pass;
 
 sleep(2);
 // End of GA for loop
@@ -420,10 +454,15 @@ sleep(2);
 
 // FINALISE //
 
-printf("Total number of passes%d\n", n_total_pass);
+printf("Final total number of passes%d\n", n_total_pass);
 fitness.print("Fitness Final");
 
+printf("Summary:\n");
+printf("-----------------------\n");
 
+gen_best_fitness.print("Best Fitness per Generation:");
+
+gen_n_passes.print("Total number of passes per Generation:");
 
 return 0;
 }
